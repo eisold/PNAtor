@@ -6,6 +6,8 @@ import de.bioforscher.singa.chemistry.physical.model.Structure;
 
 public class PNAGenerator {
 
-
+        Structure structure = StructureParser.online()
+                .pdbIdentifier("1BNA")
+                .parse();
 
 }
