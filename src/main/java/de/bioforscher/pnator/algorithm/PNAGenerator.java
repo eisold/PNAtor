@@ -67,11 +67,25 @@ public class PNAGenerator {
                         logger.trace("Calculated centroid between {} and {} as {}.",positionOP1, positionOP2,
                                 centroid);
 
-                        int integer = nucleotide.addNode(new RegularAtom(addedAtomIndex++, ElementProvider.CARBON,
-                                "C4'", centroid));
+
+
+                        // calculat
+                        Vector3D newPosition = atomP.getPosition().add(centroid.subtract(atomP.getPosition()).normalize().multiply(1.0));
+                        Atom atomOone = new RegularAtom(addedAtomIndex++, ElementProvider.OXYGEN,
+                                "O1'", newPosition);
+                        nucleotide.addNode(atomOone);
+                        nucleotide.addEdgeBetween(atomP,atomOone);
+
+                        atomP.setElement(ElementProvider.CARBON);
+                        atomP.setAtomNameString("C3'");
+
+
 
                         structure.getFirstModel().get().removeNode(atomOP1);
                         structure.getFirstModel().get().removeNode(atomOP2);
+
+
+
                     } else {
                         logger.warn("Could not calculate backbone for nucleotide {}.", nucleotide);
                     }
