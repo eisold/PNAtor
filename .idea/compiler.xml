@@ -10,7 +10,7 @@
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
-      <module name="PNAtor" target="1.5" />
+      <module name="PNAtor" target="1.8" />
     </bytecodeTargetLevel>
   </component>
 </project>
