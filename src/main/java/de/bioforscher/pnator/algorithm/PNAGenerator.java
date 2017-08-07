@@ -18,6 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.lang.reflect.Modifier;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
@@ -46,7 +47,7 @@ public class PNAGenerator {
         logger.info("Collected {} nucleotides.", nucleotides.size());
 
         nucleotides
-                .forEach(nucleotide -> {
+                .forEach((Nucleotide nucleotide) -> {
                     Atom atomOP1 = null;
                     if (nucleotide.containsAtomWithName(AtomName.OP1)) {
                         atomOP1 = nucleotide.getAtomByName(AtomName.OP1);
@@ -69,7 +70,7 @@ public class PNAGenerator {
 
 
 
-                        // calculat
+                        // calculate
                         Vector3D newPosition = atomP.getPosition().add(centroid.subtract(atomP.getPosition()).normalize().multiply(1.0));
                         Atom atomOone = new RegularAtom(addedAtomIndex++, ElementProvider.OXYGEN,
                                 "O1'", newPosition);
@@ -85,12 +86,15 @@ public class PNAGenerator {
                         structure.getFirstModel().get().removeNode(atomOP2);
 
 
-
                     } else {
                         logger.warn("Could not calculate backbone for nucleotide {}.", nucleotide);
                     }
 
+
+
                 });
+
+
 
         try {
             StructureWriter.writeBranchSubstructure(structure.getFirstModel().get(), Paths.get("/tmp/test.pdb"));
@@ -103,6 +107,63 @@ public class PNAGenerator {
         Application.launch(StructureViewer.class);
 
 
+    }
+
+
+
+    private static void convertAtom(Atom an) {
+
+        switch (an.getAtomNameString()){
+
+            case "05'":
+                an.setElement(ElementProvider.NITROGEN);
+                an.setAtomNameString("N1'");
+                break;
+            case "C5'":
+
+                an.setElement(ElementProvider.CARBON);
+                an.setAtomNameString("C2'");
+                break;
+
+            case "C4'":
+
+                an.setElement(ElementProvider.CARBON);
+                an.setAtomNameString("C3'");
+                break;
+
+            case "C3'":
+
+                an.setElement(ElementProvider.NITROGEN);
+                an.setAtomNameString("N4'");
+                break;
+
+            case "C2'":
+
+                an.setElement(ElementProvider.CARBON);
+                an.setAtomNameString("C7'");
+                break;
+
+            case "C1'":
+
+                an.setElement(ElementProvider.CARBON);
+                an.setAtomNameString("C8'");
+                break;
+
+            case "03":
+
+                an.setElement(ElementProvider.CARBON);
+                an.setAtomNameString("C5'");
+                break;
+
+            case "P":
+
+                an.setElement(ElementProvider.CARBON);
+                an.setAtomNameString("C'");
+                break;
+
+                default:
+                    break;
+        }
     }
 
 
