@@ -69,18 +69,13 @@ public class PNAGenerator {
                                 centroid);
 
 
-
-                        // calculate
                         Vector3D newPosition = atomP.getPosition().add(centroid.subtract(atomP.getPosition()).normalize().multiply(1.0));
                         Atom atomOone = new RegularAtom(addedAtomIndex++, ElementProvider.OXYGEN,
                                 "O1'", newPosition);
                         nucleotide.addNode(atomOone);
                         nucleotide.addEdgeBetween(atomP,atomOone);
 
-                        atomP.setElement(ElementProvider.CARBON);
-                        atomP.setAtomNameString("C3'");
-
-
+                        System.out.println(positionOP1.angleTo(atomOone.getPosition()));
 
                         structure.getFirstModel().get().removeNode(atomOP1);
                         structure.getFirstModel().get().removeNode(atomOP2);
@@ -90,7 +85,7 @@ public class PNAGenerator {
                         logger.warn("Could not calculate backbone for nucleotide {}.", nucleotide);
                     }
 
-
+                    nucleotide.getAllAtoms().forEach(PNAGenerator::convertAtom);
 
                 });
 
@@ -115,50 +110,65 @@ public class PNAGenerator {
 
         switch (an.getAtomNameString()){
 
-            case "05'":
+            case "O5'":
                 an.setElement(ElementProvider.NITROGEN);
                 an.setAtomNameString("N1'");
+                logger.trace("Replacing Atom {} through {}.", "O5'",an.getAtomNameString() );
                 break;
             case "C5'":
 
                 an.setElement(ElementProvider.CARBON);
                 an.setAtomNameString("C2'");
+                logger.trace("Replacing Atom {} through {}.", "C5'",an.getAtomNameString() );
+
                 break;
 
             case "C4'":
 
                 an.setElement(ElementProvider.CARBON);
                 an.setAtomNameString("C3'");
+                logger.trace("Replacing Atom {} through {}.", "C4'",an.getAtomNameString() );
+
                 break;
 
             case "C3'":
 
                 an.setElement(ElementProvider.NITROGEN);
                 an.setAtomNameString("N4'");
+                logger.trace("Replacing Atom {} through {}.", "C3'",an.getAtomNameString() );
+
                 break;
 
             case "C2'":
 
                 an.setElement(ElementProvider.CARBON);
                 an.setAtomNameString("C7'");
+                logger.trace("Replacing Atom {} through {}.", "C2'",an.getAtomNameString() );
+
                 break;
 
             case "C1'":
 
                 an.setElement(ElementProvider.CARBON);
                 an.setAtomNameString("C8'");
+                logger.trace("Replacing Atom {} through {}.", "C1'",an.getAtomNameString() );
+
                 break;
 
-            case "03":
+            case "O3'":
 
                 an.setElement(ElementProvider.CARBON);
                 an.setAtomNameString("C5'");
+                logger.trace("Replacing Atom {} through {}.", "O3'",an.getAtomNameString() );
+
                 break;
 
             case "P":
 
                 an.setElement(ElementProvider.CARBON);
                 an.setAtomNameString("C'");
+                logger.trace("Replacing Atom {} through {}.", "P",an.getAtomNameString() );
+
                 break;
 
                 default:
