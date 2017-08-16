@@ -1,5 +1,6 @@
 package de.bioforscher.pnator.algorithm;
 
+import de.bioforscher.singa.chemistry.descriptive.elements.Element;
 import de.bioforscher.singa.chemistry.descriptive.elements.ElementProvider;
 import de.bioforscher.singa.chemistry.parser.pdb.structures.StructureParser;
 import de.bioforscher.singa.chemistry.parser.pdb.structures.StructureWriter;
@@ -24,12 +25,19 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static de.bioforscher.singa.chemistry.descriptive.elements.ElementProvider.*;
+
+/**
+ * @author Alexander Eisold
+ * @version 1.0
+ */
 
 public class PNAGenerator {
 
     private static final Logger logger = LoggerFactory.getLogger(PNAGenerator.class);
 
     private static int addedAtomIndex = 1000;
+    private static final double C_O_DOUBLE_BOND_DISTANCE = 1.21;
 
     public static void main(String[] args) {
 
@@ -48,6 +56,14 @@ public class PNAGenerator {
 
         nucleotides
                 .forEach((Nucleotide nucleotide) -> {
+
+                    Atom oxygenTow = PNAGenerator.calculateMissingAtoms(nucleotide.getAtomByName(AtomName.getAtomNameFromString("C1'")), nucleotide.getAtomByName(AtomName.getAtomNameFromString("C3'")), nucleotide.getAtomByName(AtomName.getAtomNameFromString("C2'")), false, "O7'", OXYGEN);
+
+                    nucleotide.addNode(oxygenTow);
+                    nucleotide.addEdgeBetween(nucleotide.getAtomByName(AtomName.getAtomNameFromString("C3'")), oxygenTow);
+                    structure.getFirstModel().get().removeNode(nucleotide.getAtomByName(AtomName.O4Pr));
+
+
                     Atom atomOP1 = null;
                     if (nucleotide.containsAtomWithName(AtomName.OP1)) {
                         atomOP1 = nucleotide.getAtomByName(AtomName.OP1);
@@ -61,21 +77,12 @@ public class PNAGenerator {
                         atomP = nucleotide.getAtomByName(AtomName.P);
                     }
                     if (atomOP1 != null && atomOP2 != null && atomP != null) {
-                        Vector3D positionOP1 = atomOP1.getPosition();
-                        Vector3D positionOP2 = atomOP2.getPosition();
-
-                        Vector3D centroid = Vectors3D.getCentroid(Arrays.asList(positionOP1, positionOP2));
-                        logger.trace("Calculated centroid between {} and {} as {}.",positionOP1, positionOP2,
-                                centroid);
 
 
-                        Vector3D newPosition = atomP.getPosition().add(centroid.subtract(atomP.getPosition()).normalize().multiply(1.0));
-                        Atom atomOone = new RegularAtom(addedAtomIndex++, ElementProvider.OXYGEN,
-                                "O1'", newPosition);
-                        nucleotide.addNode(atomOone);
-                        nucleotide.addEdgeBetween(atomP,atomOone);
+                        Atom oxygenOne = PNAGenerator.calculateMissingAtoms(atomOP1, atomOP2, atomP, true, "O1'", OXYGEN);
 
-                        System.out.println(positionOP1.angleTo(atomOone.getPosition()));
+                        nucleotide.addNode(oxygenOne);
+                        nucleotide.addEdgeBetween(atomP, oxygenOne);
 
                         structure.getFirstModel().get().removeNode(atomOP1);
                         structure.getFirstModel().get().removeNode(atomOP2);
@@ -85,10 +92,10 @@ public class PNAGenerator {
                         logger.warn("Could not calculate backbone for nucleotide {}.", nucleotide);
                     }
 
+
                     nucleotide.getAllAtoms().forEach(PNAGenerator::convertAtom);
 
                 });
-
 
 
         try {
@@ -96,86 +103,113 @@ public class PNAGenerator {
         } catch (IOException e) {
             e.printStackTrace();
         }
-
-        StructureViewer.colorScheme = ColorScheme.BY_ELEMENT;
-        StructureViewer.structure = structure;
-        Application.launch(StructureViewer.class);
-
+/**
+ StructureViewer.colorScheme = ColorScheme.BY_ELEMENT;
+ StructureViewer.structure = structure;
+ Application.launch(StructureViewer.class);
+ **/
 
     }
 
 
-
     private static void convertAtom(Atom an) {
 
-        switch (an.getAtomNameString()){
+        switch (an.getAtomNameString()) {
 
             case "O5'":
-                an.setElement(ElementProvider.NITROGEN);
+                an.setElement(NITROGEN);
                 an.setAtomNameString("N1'");
-                logger.trace("Replacing Atom {} through {}.", "O5'",an.getAtomNameString() );
+                logger.trace("Replacing Atom {} through {}.", "O5'", an.getAtomNameString());
                 break;
             case "C5'":
 
-                an.setElement(ElementProvider.CARBON);
+                an.setElement(CARBON);
                 an.setAtomNameString("C2'");
-                logger.trace("Replacing Atom {} through {}.", "C5'",an.getAtomNameString() );
+                logger.trace("Replacing Atom {} through {}.", "C5'", an.getAtomNameString());
 
                 break;
 
             case "C4'":
 
-                an.setElement(ElementProvider.CARBON);
+                an.setElement(CARBON);
                 an.setAtomNameString("C3'");
-                logger.trace("Replacing Atom {} through {}.", "C4'",an.getAtomNameString() );
+                logger.trace("Replacing Atom {} through {}.", "C4'", an.getAtomNameString());
 
                 break;
 
             case "C3'":
 
-                an.setElement(ElementProvider.NITROGEN);
+                an.setElement(NITROGEN);
                 an.setAtomNameString("N4'");
-                logger.trace("Replacing Atom {} through {}.", "C3'",an.getAtomNameString() );
+                logger.trace("Replacing Atom {} through {}.", "C3'", an.getAtomNameString());
 
                 break;
 
             case "C2'":
 
-                an.setElement(ElementProvider.CARBON);
+                an.setElement(CARBON);
                 an.setAtomNameString("C7'");
-                logger.trace("Replacing Atom {} through {}.", "C2'",an.getAtomNameString() );
+                logger.trace("Replacing Atom {} through {}.", "C2'", an.getAtomNameString());
 
                 break;
 
             case "C1'":
 
-                an.setElement(ElementProvider.CARBON);
+                an.setElement(CARBON);
                 an.setAtomNameString("C8'");
-                logger.trace("Replacing Atom {} through {}.", "C1'",an.getAtomNameString() );
+                logger.trace("Replacing Atom {} through {}.", "C1'", an.getAtomNameString());
 
                 break;
 
             case "O3'":
 
-                an.setElement(ElementProvider.CARBON);
+                an.setElement(CARBON);
                 an.setAtomNameString("C5'");
-                logger.trace("Replacing Atom {} through {}.", "O3'",an.getAtomNameString() );
+                logger.trace("Replacing Atom {} through {}.", "O3'", an.getAtomNameString());
 
                 break;
 
             case "P":
 
-                an.setElement(ElementProvider.CARBON);
+                an.setElement(CARBON);
                 an.setAtomNameString("C'");
-                logger.trace("Replacing Atom {} through {}.", "P",an.getAtomNameString() );
+                logger.trace("Replacing Atom {} through {}.", "P", an.getAtomNameString());
 
                 break;
 
-                default:
-                    break;
+            default:
+                break;
         }
     }
 
+    /**
+     * @pram a first Atom for the calculation of the centroid between Atom a and Atom b
+     * @pram b second Atom for the calculation of the centroid between Atom a and Atom b
+     * @pram c an Atom that is bounded with the calculated missing Atom
+     * @pram forward an boolean that defined the direction of the new normalized vector (true is positive and false negate the vector)
+     * @pram name an String of the missing atom
+     * @pram element an Element equals the missing atom
+     */
 
+    public static Atom calculateMissingAtoms(Atom a, Atom b, Atom c, Boolean forward, String name, Element element) {
 
+        Vector3D positionA = a.getPosition();
+        Vector3D positionB = b.getPosition();
+
+        Vector3D centroid = Vectors3D.getCentroid(Arrays.asList(positionA, positionB));
+        logger.trace("Calculated centroid between {} and {} as {}.", a, b, centroid);
+
+        Vector3D missingAtomPosition = null;
+        if (forward) {
+            missingAtomPosition = c.getPosition().add(centroid.subtract(c.getPosition()).normalize().multiply(C_O_DOUBLE_BOND_DISTANCE));
+
+        } else {
+            missingAtomPosition = c.getPosition().add(centroid.subtract(c.getPosition()).normalize().additivelyInvert().multiply(C_O_DOUBLE_BOND_DISTANCE));
+
+        }
+
+        Atom missingAtom = new RegularAtom(addedAtomIndex++, element, name, missingAtomPosition);
+
+        return missingAtom;
+    }
 }
