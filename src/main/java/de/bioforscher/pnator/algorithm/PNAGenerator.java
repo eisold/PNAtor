@@ -39,13 +39,20 @@ public class PNAGenerator {
     private static int addedAtomIndex = 1000;
     private static final double C_O_DOUBLE_BOND_DISTANCE = 1.21;
 
+
     public static void main(String[] args) {
 
-        Structure structure = StructureParser.online()
-                .pdbIdentifier("1BNA")
-                .parse();
+        /**
+         Structure structure = StructureParser.online()
+         .pdbIdentifier("1BNA")
+         .parse();
 
+         **/
+
+
+        Structure structure = StructureParser.local().inputStream(Thread.currentThread().getContextClassLoader().getResourceAsStream("structure_examples/model0001.pdb")).allModels().parse();
         logger.info("Parsing structure {}.", structure.getPdbIdentifier());
+
 
         List<Nucleotide> nucleotides = structure.getAllLeaves().stream()
                 .filter(StructuralEntityFilter.LeafFilter.isNucleotide())
@@ -99,7 +106,7 @@ public class PNAGenerator {
 
 
         try {
-            StructureWriter.writeBranchSubstructure(structure.getFirstModel().get(), Paths.get("/tmp/test.pdb"));
+            StructureWriter.writeBranchSubstructure(structure.getFirstModel().get(), Paths.get("/tmp/test3.pdb"));
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -110,7 +117,6 @@ public class PNAGenerator {
  **/
 
     }
-
 
     private static void convertAtom(Atom an) {
 
