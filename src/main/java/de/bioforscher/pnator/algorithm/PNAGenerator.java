@@ -2,6 +2,7 @@ package de.bioforscher.pnator.algorithm;
 
 import de.bioforscher.singa.chemistry.descriptive.elements.Element;
 import de.bioforscher.singa.chemistry.parser.pdb.structures.StructureParser;
+import de.bioforscher.singa.chemistry.parser.pdb.structures.StructureParserOptions;
 import de.bioforscher.singa.chemistry.parser.pdb.structures.StructureWriter;
 import de.bioforscher.singa.chemistry.physical.atoms.Atom;
 import de.bioforscher.singa.chemistry.physical.atoms.AtomName;
@@ -40,21 +41,21 @@ public class PNAGenerator {
 
         /*
          * TODO: decide whether structure is dna or rna or hybrid
-         * TODO: remove hydrogen atoms if present
+         *
          */
 
+/*
         Structure structure = StructureParser.online()
-                .pdbIdentifier("1BNA")
+                .pdbIdentifier("1BNA").everything().setOptions(StructureParserOptions.withSettings(StructureParserOptions.Setting.OMIT_HYDROGENS))
                 .parse();
-        /*
+*/
          Structure structure = StructureParser.local().inputStream(Thread.currentThread().getContextClassLoader()
-         .getResourceAsStream("structure_examples/example1.pdb")).allModels().parse();
+         .getResourceAsStream("structure_examples/model0001.pdb")).allModels().everything().setOptions(StructureParserOptions.withSettings(StructureParserOptions.Setting.OMIT_HYDROGENS)).parse();
          logger.info("Parsing structure {}.", structure.getPdbIdentifier());
-         */
         convertToPNAStructure(structure);
 
         try {
-            StructureWriter.writeBranchSubstructure(structure.getFirstModel(), Paths.get("/tmp/test3.pdb"));
+            StructureWriter.writeBranchSubstructure(structure.getFirstModel(), Paths.get("/tmp/test5.pdb"));
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -88,6 +89,13 @@ public class PNAGenerator {
                     Optional<Atom> secondPhosphateOptional = SECOND_BACKBONE_PHOSPHATE.getAtomFrom(nucleotide);
                     Optional<Atom> backbonePosphateOptional = BACKBONE_PHOSPHATE.getAtomFrom(nucleotide);
 
+                    //RNA specific atoms
+                    Optional<Atom> backboneOxygenTwoPrimeOptional = OXYGEN_TWO_PRIME.getAtomFrom(nucleotide);
+                    Optional<Atom> backboneHydrogenOxygenTwoPrimeOptional = HYDROGEN_OXYGEN_TWO_PRIME.getAtomFrom(nucleotide);
+
+
+
+
                     if (firstPhosphateOptional.isPresent() && secondPhosphateOptional.isPresent() &&
                             backbonePosphateOptional.isPresent()) {
 
@@ -110,6 +118,12 @@ public class PNAGenerator {
                     // remove obsolete atoms
                     firstPhosphateOptional.ifPresent(nucleotide::removeNode);
                     secondPhosphateOptional.ifPresent(nucleotide::removeNode);
+
+
+                    // remove obsolete RNA specific atoms
+                    backboneOxygenTwoPrimeOptional.ifPresent(nucleotide::removeNode);
+                    backboneHydrogenOxygenTwoPrimeOptional.ifPresent(nucleotide::removeNode);
+
 
                     chain.removeNode(nucleotide.getAtomByName(AtomName.O4Pr));
 

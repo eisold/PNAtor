@@ -17,7 +17,15 @@ public enum AtomNameEquivalents {
     FIRST_BACKBONE_PHOSPHATE("OP1", "O1P"),
     SECOND_BACKBONE_PHOSPHATE("OP2", "O2P"),
     BACKBONE_PHOSPHATE("P"),
-    OXYGEN_FIVE_PRIME("O5'");
+    OXYGEN_FIVE_PRIME("O5'"),
+    OXYGEN_THREE_PRIME("O3'"),
+    CARBON_FIVE_PRIME("C5'"),
+    CARBON_FOUR_PRIME("C4'"),
+    CARBON_THREE_PRIME("C3'"),
+    CARBON_TWO_PRIME("C2'"),
+    CARBON_ONE_PRIME("C1'"),
+    //RNA specific atoms
+    OXYGEN_TWO_PRIME("O2'");,
 
     private Set<String> equivalentAtomNames;
 
