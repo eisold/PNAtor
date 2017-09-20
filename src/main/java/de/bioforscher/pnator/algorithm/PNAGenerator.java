@@ -41,21 +41,23 @@ public class PNAGenerator {
 
         /*
          * TODO: decide whether structure is dna or rna or hybrid
-         *
+         * TODO: remove hydrogen atoms if present
          */
 
-/*
         Structure structure = StructureParser.online()
-                .pdbIdentifier("1BNA").everything().setOptions(StructureParserOptions.withSettings(StructureParserOptions.Setting.OMIT_HYDROGENS))
+                .pdbIdentifier("135D")
+                .everything()
+                .setOptions(StructureParserOptions.withSettings(StructureParserOptions.Setting.OMIT_HYDROGENS))
                 .parse();
-*/
+        /*
          Structure structure = StructureParser.local().inputStream(Thread.currentThread().getContextClassLoader()
-         .getResourceAsStream("structure_examples/model0001.pdb")).allModels().everything().setOptions(StructureParserOptions.withSettings(StructureParserOptions.Setting.OMIT_HYDROGENS)).parse();
+         .getResourceAsStream("structure_examples/example1.pdb")).allModels().parse();
          logger.info("Parsing structure {}.", structure.getPdbIdentifier());
+         */
         convertToPNAStructure(structure);
 
         try {
-            StructureWriter.writeBranchSubstructure(structure.getFirstModel(), Paths.get("/tmp/test5.pdb"));
+            StructureWriter.writeBranchSubstructure(structure.getFirstModel(), Paths.get("/tmp/test3.pdb"));
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -89,13 +91,6 @@ public class PNAGenerator {
                     Optional<Atom> secondPhosphateOptional = SECOND_BACKBONE_PHOSPHATE.getAtomFrom(nucleotide);
                     Optional<Atom> backbonePosphateOptional = BACKBONE_PHOSPHATE.getAtomFrom(nucleotide);
 
-                    //RNA specific atoms
-                    Optional<Atom> backboneOxygenTwoPrimeOptional = OXYGEN_TWO_PRIME.getAtomFrom(nucleotide);
-                    Optional<Atom> backboneHydrogenOxygenTwoPrimeOptional = HYDROGEN_OXYGEN_TWO_PRIME.getAtomFrom(nucleotide);
-
-
-
-
                     if (firstPhosphateOptional.isPresent() && secondPhosphateOptional.isPresent() &&
                             backbonePosphateOptional.isPresent()) {
 
@@ -110,109 +105,95 @@ public class PNAGenerator {
                         backboneFailCount++;
                         if (backboneFailCount == 1) {
                             logger.warn("Could not calculate backbone for nucleotide {}.", nucleotide);
-                        } else {
-                            throw new InvalidInputStructure("Missing atoms to calculate backbone.");
                         }
+                        // else {
+                        // throw new InvalidInputStructure("Missing atoms to calculate backbone.");
+                        // }
                     }
 
                     // remove obsolete atoms
                     firstPhosphateOptional.ifPresent(nucleotide::removeNode);
                     secondPhosphateOptional.ifPresent(nucleotide::removeNode);
 
-
-                    // remove obsolete RNA specific atoms
-                    backboneOxygenTwoPrimeOptional.ifPresent(nucleotide::removeNode);
-                    backboneHydrogenOxygenTwoPrimeOptional.ifPresent(nucleotide::removeNode);
-
-
                     chain.removeNode(nucleotide.getAtomByName(AtomName.O4Pr));
 
-                    nucleotide.getAllAtoms().forEach(PNAGenerator::convertAtom);
+                    NucleotideValidator validator = new NucleotideValidator(nucleotide.getIdentifier());
+                    nucleotide.getAllAtoms().forEach(atom -> convertAtom(atom, validator));
+                    if (!validator.isValid()) {
+                        logger.warn("The following names were not replaced: {}", validator.getInvalidNames());
+                    }
+                     else {
+                        logger.warn("The nucleotide {} was replaced successfully.", nucleotide.getIdentifier());
+                    }
 
                 });
             }
-
             backboneFailCount = 0;
         });
         return structure;
 
     }
 
-
-    private static void convertAtom(Atom an) {
-
-        String atomName = an.getAtomNameString();
-
-
+    private static void convertAtom(Atom an, NucleotideValidator validator) {
 
         switch (an.getAtomNameString()) {
-
-            case "O5'":
-                an.setElement(NITROGEN);
-                an.setAtomNameString("N1'");
-                logger.trace("Replacing Atom {} through {}.", "O5'", an.getAtomNameString());
+            case "O5'": {
+                String replacement = "N1'";
+                replace(an, NITROGEN, replacement);
+                validator.validate(replacement);
                 break;
-            case "C5'":
-
-                an.setElement(CARBON);
-                an.setAtomNameString("C2'");
-                logger.trace("Replacing Atom {} through {}.", "C5'", an.getAtomNameString());
-
+            }
+            case "C5'": {
+                String replacement = "C2'";
+                replace(an, CARBON, replacement);
+                validator.validate(replacement);
                 break;
-
-            case "C4'":
-
-                an.setElement(CARBON);
-                an.setAtomNameString("C3'");
-                logger.trace("Replacing Atom {} through {}.", "C4'", an.getAtomNameString());
-
+            }
+            case "C4'": {
+                String replacement = "C3'";
+                replace(an, CARBON, replacement);
+                validator.validate(replacement);
                 break;
-
-            case "C3'":
-
-                an.setElement(NITROGEN);
-                an.setAtomNameString("N4'");
-                logger.trace("Replacing Atom {} through {}.", "C3'", an.getAtomNameString());
-
+            }
+            case "C3'": {
+                String replacement = "N4'";
+                replace(an, NITROGEN, replacement);
+                validator.validate(replacement);
                 break;
-
-            case "C2'":
-
-                an.setElement(CARBON);
-                an.setAtomNameString("C7'");
-                logger.trace("Replacing Atom {} through {}.", "C2'", an.getAtomNameString());
-
+            }
+            case "C2'": {
+                String replacement = "C7'";
+                replace(an, CARBON, replacement);
+                validator.validate(replacement);
                 break;
-
-            case "C1'":
-
-                an.setElement(CARBON);
-                an.setAtomNameString("C8'");
-                logger.trace("Replacing Atom {} through {}.", "C1'", an.getAtomNameString());
-
+            }
+            case "C1'": {
+                String replacement = "C8'";
+                replace(an, CARBON, replacement);
+                validator.validate(replacement);
                 break;
-
-            case "O3'":
-
-                an.setElement(CARBON);
-                an.setAtomNameString("C5'");
-                logger.trace("Replacing Atom {} through {}.", "O3'", an.getAtomNameString());
-
+            }
+            case "O3'": {
+                String replacement = "C5'";
+                replace(an, CARBON, replacement);
+                validator.validate(replacement);
                 break;
-
-            case "P":
-
-                an.setElement(CARBON);
-                an.setAtomNameString("C'");
-                logger.trace("Replacing Atom {} through {}.", "P", an.getAtomNameString());
-
+            }
+            case "P": {
+                String replacement = "C'";
+                replace(an, CARBON, replacement);
+                validator.validate(replacement);
                 break;
-
+            }
             default:
-
-
                 break;
         }
+    }
+
+    private static void replace(Atom atom, Element replacementElement, String replacementString) {
+        atom.setElement(replacementElement);
+        atom.setAtomNameString(replacementString);
+        // logger.trace("Replacing Atom {} through {}.", "C3'", atom.getAtomNameString());
     }
 
     /**

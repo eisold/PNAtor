@@ -25,7 +25,7 @@ public enum AtomNameEquivalents {
     CARBON_TWO_PRIME("C2'"),
     CARBON_ONE_PRIME("C1'"),
     //RNA specific atoms
-    OXYGEN_TWO_PRIME("O2'");,
+    OXYGEN_TWO_PRIME("O2'");
 
     private Set<String> equivalentAtomNames;
 
