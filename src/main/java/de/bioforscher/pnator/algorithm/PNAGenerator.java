@@ -1,30 +1,25 @@
 package de.bioforscher.pnator.algorithm;
 
 import de.bioforscher.singa.chemistry.descriptive.elements.Element;
-import de.bioforscher.singa.chemistry.descriptive.elements.ElementProvider;
 import de.bioforscher.singa.chemistry.parser.pdb.structures.StructureParser;
 import de.bioforscher.singa.chemistry.parser.pdb.structures.StructureWriter;
 import de.bioforscher.singa.chemistry.physical.atoms.Atom;
 import de.bioforscher.singa.chemistry.physical.atoms.AtomName;
 import de.bioforscher.singa.chemistry.physical.atoms.RegularAtom;
 import de.bioforscher.singa.chemistry.physical.leaves.Nucleotide;
-import de.bioforscher.singa.chemistry.physical.model.StructuralEntityFilter;
 import de.bioforscher.singa.chemistry.physical.model.Structure;
-import de.bioforscher.singa.javafx.viewer.ColorScheme;
-import de.bioforscher.singa.javafx.viewer.StructureViewer;
 import de.bioforscher.singa.mathematics.vectors.Vector3D;
 import de.bioforscher.singa.mathematics.vectors.Vectors3D;
-import javafx.application.Application;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.lang.reflect.Modifier;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Optional;
 
+import static de.bioforscher.pnator.algorithm.AtomNameEquivalents.*;
 import static de.bioforscher.singa.chemistry.descriptive.elements.ElementProvider.*;
 
 /**
@@ -39,86 +34,102 @@ public class PNAGenerator {
     private static int addedAtomIndex = 1000;
     private static final double C_O_DOUBLE_BOND_DISTANCE = 1.21;
 
+    private static int backboneFailCount = 0;
 
     public static void main(String[] args) {
 
-        /**
-         Structure structure = StructureParser.online()
-         .pdbIdentifier("1BNA")
-         .parse();
+        /*
+         * TODO: decide whether structure is dna or rna or hybrid
+         * TODO: remove hydrogen atoms if present
+         */
 
-         **/
+        Structure structure = StructureParser.online()
+                .pdbIdentifier("1BNA")
+                .parse();
+        /*
+         Structure structure = StructureParser.local().inputStream(Thread.currentThread().getContextClassLoader()
+         .getResourceAsStream("structure_examples/example1.pdb")).allModels().parse();
+         logger.info("Parsing structure {}.", structure.getPdbIdentifier());
+         */
+        convertToPNAStructure(structure);
 
+        try {
+            StructureWriter.writeBranchSubstructure(structure.getFirstModel(), Paths.get("/tmp/test3.pdb"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
-        Structure structure = StructureParser.local().inputStream(Thread.currentThread().getContextClassLoader().getResourceAsStream("structure_examples/model0001.pdb")).allModels().parse();
-        logger.info("Parsing structure {}.", structure.getPdbIdentifier());
+        /*
+         StructureViewer.colorScheme = ColorScheme.BY_ELEMENT;
+         StructureViewer.structure = structure;
+         Application.launch(StructureViewer.class);
+         */
 
+    }
 
-        List<Nucleotide> nucleotides = structure.getAllLeaves().stream()
-                .filter(StructuralEntityFilter.LeafFilter.isNucleotide())
-                .map(leaf -> (Nucleotide) leaf)
-                .collect(Collectors.toList());
+    public static Structure convertToPNAStructure(Structure structure) {
 
-        logger.info("Collected {} nucleotides.", nucleotides.size());
+        structure.getAllChains().forEach(chain -> {
 
-        nucleotides
-                .forEach((Nucleotide nucleotide) -> {
+            List<Nucleotide> nucleotides = chain.getNucleotides();
+            logger.info("Collected {} nucleotides for chain {}.", nucleotides.size(), chain.getIdentifier());
+
+            if (nucleotides.isEmpty()) {
+                logger.info("Chain {} is no nucleosid, skipping.", chain.getIdentifier());
+            } else {
+                nucleotides.forEach((Nucleotide nucleotide) -> {
 
                     Atom oxygenTow = PNAGenerator.calculateMissingAtoms(nucleotide.getAtomByName(AtomName.getAtomNameFromString("C1'")), nucleotide.getAtomByName(AtomName.getAtomNameFromString("C3'")), nucleotide.getAtomByName(AtomName.getAtomNameFromString("C2'")), false, "O7'", OXYGEN);
 
                     nucleotide.addNode(oxygenTow);
                     nucleotide.addEdgeBetween(nucleotide.getAtomByName(AtomName.getAtomNameFromString("C3'")), oxygenTow);
-                    structure.getFirstModel().get().removeNode(nucleotide.getAtomByName(AtomName.O4Pr));
 
+                    Optional<Atom> firstPhosphateOptional = FIRST_BACKBONE_PHOSPHATE.getAtomFrom(nucleotide);
+                    Optional<Atom> secondPhosphateOptional = SECOND_BACKBONE_PHOSPHATE.getAtomFrom(nucleotide);
+                    Optional<Atom> backbonePosphateOptional = BACKBONE_PHOSPHATE.getAtomFrom(nucleotide);
 
-                    Atom atomOP1 = null;
-                    if (nucleotide.containsAtomWithName(AtomName.OP1)) {
-                        atomOP1 = nucleotide.getAtomByName(AtomName.OP1);
-                    }
-                    Atom atomOP2 = null;
-                    if (nucleotide.containsAtomWithName(AtomName.OP2)) {
-                        atomOP2 = nucleotide.getAtomByName(AtomName.OP2);
-                    }
-                    Atom atomP = null;
-                    if (nucleotide.containsAtomWithName(AtomName.P)) {
-                        atomP = nucleotide.getAtomByName(AtomName.P);
-                    }
-                    if (atomOP1 != null && atomOP2 != null && atomP != null) {
+                    if (firstPhosphateOptional.isPresent() && secondPhosphateOptional.isPresent() &&
+                            backbonePosphateOptional.isPresent()) {
 
-
-                        Atom oxygenOne = PNAGenerator.calculateMissingAtoms(atomOP1, atomOP2, atomP, true, "O1'", OXYGEN);
+                        Atom oxygenOne = PNAGenerator.calculateMissingAtoms(firstPhosphateOptional.get(),
+                                secondPhosphateOptional.get(), backbonePosphateOptional.get(), true,
+                                "O1'", OXYGEN);
 
                         nucleotide.addNode(oxygenOne);
-                        nucleotide.addEdgeBetween(atomP, oxygenOne);
-
-                        structure.getFirstModel().get().removeNode(atomOP1);
-                        structure.getFirstModel().get().removeNode(atomOP2);
-
+                        nucleotide.addEdgeBetween(backbonePosphateOptional.get(), oxygenOne);
 
                     } else {
-                        logger.warn("Could not calculate backbone for nucleotide {}.", nucleotide);
+                        backboneFailCount++;
+                        if (backboneFailCount == 1) {
+                            logger.warn("Could not calculate backbone for nucleotide {}.", nucleotide);
+                        } else {
+                            throw new InvalidInputStructure("Missing atoms to calculate backbone.");
+                        }
                     }
 
+                    // remove obsolete atoms
+                    firstPhosphateOptional.ifPresent(nucleotide::removeNode);
+                    secondPhosphateOptional.ifPresent(nucleotide::removeNode);
+
+                    chain.removeNode(nucleotide.getAtomByName(AtomName.O4Pr));
 
                     nucleotide.getAllAtoms().forEach(PNAGenerator::convertAtom);
 
                 });
+            }
 
-
-        try {
-            StructureWriter.writeBranchSubstructure(structure.getFirstModel().get(), Paths.get("/tmp/test3.pdb"));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-/**
- StructureViewer.colorScheme = ColorScheme.BY_ELEMENT;
- StructureViewer.structure = structure;
- Application.launch(StructureViewer.class);
- **/
+            backboneFailCount = 0;
+        });
+        return structure;
 
     }
 
+
     private static void convertAtom(Atom an) {
+
+        String atomName = an.getAtomNameString();
+
+
 
         switch (an.getAtomNameString()) {
 
@@ -184,6 +195,8 @@ public class PNAGenerator {
                 break;
 
             default:
+
+
                 break;
         }
     }
