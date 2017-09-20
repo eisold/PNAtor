@@ -22,10 +22,10 @@ public class PNAGeneratorTest {
         StructureParser.MultiParser multiParser = StructureParser.online()
                 .chainList(Paths.get(Resources.getResourceAsFileLocation("nt_identifier.txt")));
 
-        for (int index = 0; index < 100; index++) {
+        for (int index = 0; index < 25187; index++) {
             Structure next = multiParser.next();
             try {
-                logger.info("Converted {}/{} structure {}", index,multiParser.getNumberOfQueuedStructures(),
+                logger.info("Converted {}/{} structure {}", index+1,multiParser.getNumberOfQueuedStructures(),
                         multiParser.getCurrentPdbIdentifier());
                 PNAGenerator.convertToPNAStructure(next);
             } catch (InvalidInputStructure exception) {

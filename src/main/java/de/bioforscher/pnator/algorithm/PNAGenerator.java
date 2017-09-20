@@ -45,7 +45,7 @@ public class PNAGenerator {
          */
 
         Structure structure = StructureParser.online()
-                .pdbIdentifier("135D")
+                .pdbIdentifier("1A1V")
                 .everything()
                 .setOptions(StructureParserOptions.withSettings(StructureParserOptions.Setting.OMIT_HYDROGENS))
                 .parse();
@@ -57,7 +57,7 @@ public class PNAGenerator {
         convertToPNAStructure(structure);
 
         try {
-            StructureWriter.writeBranchSubstructure(structure.getFirstModel(), Paths.get("/tmp/test3.pdb"));
+            StructureWriter.writeBranchSubstructure(structure.getFirstModel(), Paths.get("/tmp/1A1V_PNA.pdb"));
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -82,15 +82,38 @@ public class PNAGenerator {
             } else {
                 nucleotides.forEach((Nucleotide nucleotide) -> {
 
-                    Atom oxygenTow = PNAGenerator.calculateMissingAtoms(nucleotide.getAtomByName(AtomName.getAtomNameFromString("C1'")), nucleotide.getAtomByName(AtomName.getAtomNameFromString("C3'")), nucleotide.getAtomByName(AtomName.getAtomNameFromString("C2'")), false, "O7'", OXYGEN);
-
-                    nucleotide.addNode(oxygenTow);
-                    nucleotide.addEdgeBetween(nucleotide.getAtomByName(AtomName.getAtomNameFromString("C3'")), oxygenTow);
-
                     Optional<Atom> firstPhosphateOptional = FIRST_BACKBONE_PHOSPHATE.getAtomFrom(nucleotide);
                     Optional<Atom> secondPhosphateOptional = SECOND_BACKBONE_PHOSPHATE.getAtomFrom(nucleotide);
                     Optional<Atom> backbonePosphateOptional = BACKBONE_PHOSPHATE.getAtomFrom(nucleotide);
-                    Optional<Atom> backboneOxygenTwoPrimeOptional = OXYGEN_TWO_PRIME.getAtomFrom(nucleotide);
+
+                    Optional<Atom> backboneCarbonOnePrimeOptional = BACKBONE_CARBON_ONE_PRIME.getAtomFrom(nucleotide);
+                    Optional<Atom> backboneCarbonTwoPrimeOptional = BACKBONE_CARBON_TWO_PRIME.getAtomFrom(nucleotide);
+                    Optional<Atom> backboneCarbonThreePrimeOptional = BACKBONE_CARBON_THREE_PRIME.getAtomFrom(nucleotide);
+
+                    Optional<Atom> backboneOxygenFourPrimeOptional = BACKBONE_OXYGEN_FOUR_PRIME.getAtomFrom(nucleotide);
+
+
+
+                    Optional<Atom> backboneOxygenTwoPrimeOptional = BACKBONE_OXYGEN_TWO_PRIME.getAtomFrom(nucleotide);
+
+                    if (backboneCarbonOnePrimeOptional.isPresent() && backboneCarbonTwoPrimeOptional.isPresent() &&
+                            backboneCarbonThreePrimeOptional.isPresent()) {
+
+                        Atom oxygenTow = PNAGenerator
+                                .calculateMissingAtoms(nucleotide
+                                        .getAtomByName(AtomName
+                                                .getAtomNameFromString("C1'")), nucleotide
+                                        .getAtomByName(AtomName
+                                                .getAtomNameFromString("C3'")), nucleotide
+                                        .getAtomByName(AtomName
+                                                .getAtomNameFromString("C2'")), false, "O7'", OXYGEN);
+
+                        nucleotide.addNode(oxygenTow);
+                        nucleotide.addEdgeBetween(nucleotide.getAtomByName(AtomName.getAtomNameFromString("C3'")), oxygenTow);
+                    } else {
+                        logger.warn("Could not calculate new backbone atome {}.", "C3'");
+                    }
+
 
                     if (firstPhosphateOptional.isPresent() && secondPhosphateOptional.isPresent() &&
                             backbonePosphateOptional.isPresent()) {
@@ -114,9 +137,12 @@ public class PNAGenerator {
                     // remove obsolete atoms
                     firstPhosphateOptional.ifPresent(nucleotide::removeNode);
                     secondPhosphateOptional.ifPresent(nucleotide::removeNode);
+                    backboneOxygenFourPrimeOptional.ifPresent(nucleotide::removeNode);
+                    //chain.removeNode(nucleotide.getAtomByName(AtomName.O4Pr));
+
                     // remove obsolete RNA specific atoms
                     backboneOxygenTwoPrimeOptional.ifPresent(nucleotide::removeNode);
-                    chain.removeNode(nucleotide.getAtomByName(AtomName.O4Pr));
+
 
                     NucleotideValidator validator = new NucleotideValidator(nucleotide.getIdentifier());
                     nucleotide.getAllAtoms().forEach(atom -> convertAtom(atom, validator));
