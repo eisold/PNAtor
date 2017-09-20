@@ -90,6 +90,7 @@ public class PNAGenerator {
                     Optional<Atom> firstPhosphateOptional = FIRST_BACKBONE_PHOSPHATE.getAtomFrom(nucleotide);
                     Optional<Atom> secondPhosphateOptional = SECOND_BACKBONE_PHOSPHATE.getAtomFrom(nucleotide);
                     Optional<Atom> backbonePosphateOptional = BACKBONE_PHOSPHATE.getAtomFrom(nucleotide);
+                    Optional<Atom> backboneOxygenTwoPrimeOptional = OXYGEN_TWO_PRIME.getAtomFrom(nucleotide);
 
                     if (firstPhosphateOptional.isPresent() && secondPhosphateOptional.isPresent() &&
                             backbonePosphateOptional.isPresent()) {
@@ -105,25 +106,24 @@ public class PNAGenerator {
                         backboneFailCount++;
                         if (backboneFailCount == 1) {
                             logger.warn("Could not calculate backbone for nucleotide {}.", nucleotide);
+                        } else {
+                            logger.warn("Could not calculate backbone more than once.");
                         }
-                        // else {
-                        // throw new InvalidInputStructure("Missing atoms to calculate backbone.");
-                        // }
                     }
 
                     // remove obsolete atoms
                     firstPhosphateOptional.ifPresent(nucleotide::removeNode);
                     secondPhosphateOptional.ifPresent(nucleotide::removeNode);
-
+                    // remove obsolete RNA specific atoms
+                    backboneOxygenTwoPrimeOptional.ifPresent(nucleotide::removeNode);
                     chain.removeNode(nucleotide.getAtomByName(AtomName.O4Pr));
 
                     NucleotideValidator validator = new NucleotideValidator(nucleotide.getIdentifier());
                     nucleotide.getAllAtoms().forEach(atom -> convertAtom(atom, validator));
                     if (!validator.isValid()) {
                         logger.warn("The following names were not replaced: {}", validator.getInvalidNames());
-                    }
-                     else {
-                        logger.warn("The nucleotide {} was replaced successfully.", nucleotide.getIdentifier());
+                    } else {
+                        logger.debug("The nucleotide {} was replaced successfully.", nucleotide.getIdentifier());
                     }
 
                 });
@@ -191,20 +191,20 @@ public class PNAGenerator {
     }
 
     private static void replace(Atom atom, Element replacementElement, String replacementString) {
+        logger.trace("Replacing Atom {} through {}.", atom.getAtomNameString(), replacementString);
         atom.setElement(replacementElement);
         atom.setAtomNameString(replacementString);
-        // logger.trace("Replacing Atom {} through {}.", "C3'", atom.getAtomNameString());
     }
 
     /**
-     * @pram a first Atom for the calculation of the centroid between Atom a and Atom b
-     * @pram b second Atom for the calculation of the centroid between Atom a and Atom b
-     * @pram c an Atom that is bounded with the calculated missing Atom
-     * @pram forward an boolean that defined the direction of the new normalized vector (true is positive and false negate the vector)
-     * @pram name an String of the missing atom
-     * @pram element an Element equals the missing atom
+     * @param a first Atom for the calculation of the centroid between Atom a and Atom b
+     * @param b second Atom for the calculation of the centroid between Atom a and Atom b
+     * @param c an Atom that is bounded with the calculated missing Atom
+     * @param forward an boolean that defined the direction of the new normalized vector (true is positive and false
+     *                negate the vector)
+     * @param name an String of the missing atom
+     * @param element an Element equals the missing atom
      */
-
     public static Atom calculateMissingAtoms(Atom a, Atom b, Atom c, Boolean forward, String name, Element element) {
 
         Vector3D positionA = a.getPosition();

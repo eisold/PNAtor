@@ -24,9 +24,9 @@ public class PNAGeneratorTest {
 
         for (int index = 0; index < 100; index++) {
             Structure next = multiParser.next();
-            logger.info("Converting {}th/{} structure {}", index,multiParser.getNumberOfQueuedStructures(),
-                    multiParser.getCurrentPdbIdentifier());
             try {
+                logger.info("Converted {}/{} structure {}", index,multiParser.getNumberOfQueuedStructures(),
+                        multiParser.getCurrentPdbIdentifier());
                 PNAGenerator.convertToPNAStructure(next);
             } catch (InvalidInputStructure exception) {
                 logger.error("Converter failed because an invalid structure. ({})", next.getPdbIdentifier());
