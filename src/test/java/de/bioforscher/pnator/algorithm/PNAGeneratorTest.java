@@ -7,6 +7,7 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.UncheckedIOException;
 import java.nio.file.Paths;
 
 /**
@@ -20,20 +21,24 @@ public class PNAGeneratorTest {
     public void shouldGeneratePNAForStructures() {
 
         StructureParser.MultiParser multiParser = StructureParser.online()
-                .chainList(Paths.get(Resources.getResourceAsFileLocation("nt_identifier.txt")));
+                .chainList(Paths.get(Resources.getResourceAsFileLocation("nt_identifier_all.txt")));
 
-        for (int index = 0; index < 25187; index++) {
-            Structure next = multiParser.next();
+        for (int index = 0; index < 20727; index++) {
+
             try {
-                logger.info("Converted {}/{} structure {}", index+1,multiParser.getNumberOfQueuedStructures(),
+                Structure next = multiParser.next();
+                logger.info("Converted {}/{} structure {}", index + 1, multiParser.getNumberOfQueuedStructures(),
                         multiParser.getCurrentPdbIdentifier());
                 PNAGenerator.convertToPNAStructure(next);
             } catch (InvalidInputStructure exception) {
-                logger.error("Converter failed because an invalid structure. ({})", next.getPdbIdentifier());
+                logger.error("Converter failed because an invalid structure. ({})", multiParser.getCurrentPdbIdentifier());
+            } catch (UncheckedIOException exception) {
+                logger.error("The PDB identifier {} does not seem to exist", multiParser.getCurrentPdbIdentifier());
             }
-        }
 
+        }
     }
 
-
 }
+
+
