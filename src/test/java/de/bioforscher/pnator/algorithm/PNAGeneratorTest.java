@@ -27,13 +27,13 @@ public class PNAGeneratorTest {
 
             try {
                 Structure next = multiParser.next();
-                logger.info("Converted {}/{} structure {}", index + 1, multiParser.getNumberOfQueuedStructures(),
-                        multiParser.getCurrentPdbIdentifier());
+                logger.info("Converted {}/{} structure {}_{}", index + 1, multiParser.getNumberOfQueuedStructures(),
+                        multiParser.getCurrentPdbIdentifier(), multiParser.getCurrentChainIdentifier());
                 PNAGenerator.convertToPNAStructure(next);
             } catch (InvalidInputStructure exception) {
-                logger.error("Converter failed because an invalid structure. ({})", multiParser.getCurrentPdbIdentifier());
+                logger.error("Converter failed because an invalid structure. ({}_{})", multiParser.getCurrentPdbIdentifier(), multiParser.getCurrentChainIdentifier());
             } catch (UncheckedIOException exception) {
-                logger.error("The PDB identifier {} does not seem to exist", multiParser.getCurrentPdbIdentifier());
+                logger.error("The PDB identifier {}_{} does not seem to exist", multiParser.getCurrentPdbIdentifier(), multiParser.getCurrentChainIdentifier());
             }
 
         }
