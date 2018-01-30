@@ -1,6 +1,6 @@
 package de.bioforscher.pnator.algorithm;
 
-import de.bioforscher.singa.chemistry.physical.model.LeafIdentifier;
+import de.bioforscher.singa.structure.model.identifiers.LeafIdentifier;
 
 import java.util.HashMap;
 import java.util.HashSet;

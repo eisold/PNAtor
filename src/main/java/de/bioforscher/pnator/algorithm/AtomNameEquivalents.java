@@ -1,8 +1,8 @@
 package de.bioforscher.pnator.algorithm;
 
-import de.bioforscher.singa.chemistry.physical.atoms.Atom;
-import de.bioforscher.singa.chemistry.physical.atoms.AtomName;
-import de.bioforscher.singa.chemistry.physical.leaves.LeafSubstructure;
+import de.bioforscher.singa.structure.model.interfaces.Atom;
+import de.bioforscher.singa.structure.model.interfaces.LeafSubstructure;
+import de.bioforscher.singa.structure.model.oak.AtomName;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -39,12 +39,10 @@ public enum AtomNameEquivalents {
         return equivalentAtomNames;
     }
 
-    public Optional<Atom> getAtomFrom(LeafSubstructure<?,?> leafSubstructure) {
+    public Optional<Atom> getAtomFrom(LeafSubstructure<?> leafSubstructure) {
         for (String equivalentAtomName : this.equivalentAtomNames) {
             AtomName atomName = AtomName.getAtomNameFromString(equivalentAtomName);
-            if (leafSubstructure.containsAtomWithName(atomName)) {
-                return Optional.of(leafSubstructure.getAtomByName(atomName));
-            }
+            return leafSubstructure.getAtomByName(atomName.getName());
         }
         return Optional.empty();
     }

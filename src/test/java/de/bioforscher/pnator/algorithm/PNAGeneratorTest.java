@@ -1,8 +1,8 @@
 package de.bioforscher.pnator.algorithm;
 
-import de.bioforscher.singa.chemistry.parser.pdb.structures.StructureParser;
-import de.bioforscher.singa.chemistry.physical.model.Structure;
 import de.bioforscher.singa.core.utility.Resources;
+import de.bioforscher.singa.structure.model.interfaces.Structure;
+import de.bioforscher.singa.structure.parser.pdb.structures.StructureParser;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,10 +20,10 @@ public class PNAGeneratorTest {
     @Test
     public void shouldGeneratePNAForStructures() {
 
-        StructureParser.MultiParser multiParser = StructureParser.online()
-                .chainList(Paths.get(Resources.getResourceAsFileLocation("nt_identifier_all.txt")));
+        StructureParser.MultiParser multiParser = StructureParser.pdb()
+                .chainList(Paths.get(Resources.getResourceAsFileLocation("nt_identifier_short.txt")));
 
-        for (int index = 0; index < 20727; index++) {
+        for (int index = 0; index < 25187; index++) {
 
             try {
                 Structure next = multiParser.next();
