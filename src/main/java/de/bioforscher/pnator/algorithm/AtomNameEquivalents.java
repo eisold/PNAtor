@@ -30,7 +30,7 @@ public enum AtomNameEquivalents {
 
     private Set<String> equivalentAtomNames;
 
-    AtomNameEquivalents(String ... atomNames) {
+    AtomNameEquivalents(String... atomNames) {
         this.equivalentAtomNames = new HashSet<>();
         this.equivalentAtomNames.addAll(Arrays.asList(atomNames));
     }
@@ -42,11 +42,13 @@ public enum AtomNameEquivalents {
     public Optional<Atom> getAtomFrom(LeafSubstructure<?> leafSubstructure) {
         for (String equivalentAtomName : this.equivalentAtomNames) {
             AtomName atomName = AtomName.getAtomNameFromString(equivalentAtomName);
-            return leafSubstructure.getAtomByName(atomName.getName());
+            Optional<Atom> atomByName = leafSubstructure.getAtomByName(atomName.getName());
+            if (atomByName.isPresent()) {
+                return atomByName;
+            }
         }
         return Optional.empty();
     }
 
-    
 
 }

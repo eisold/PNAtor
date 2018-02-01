@@ -3,11 +3,14 @@ package de.bioforscher.pnator.algorithm;
 import de.bioforscher.singa.mathematics.vectors.Vector3D;
 import de.bioforscher.singa.mathematics.vectors.Vectors3D;
 import de.bioforscher.singa.structure.elements.Element;
+import de.bioforscher.singa.structure.model.identifiers.LeafIdentifier;
 import de.bioforscher.singa.structure.model.interfaces.Atom;
+import de.bioforscher.singa.structure.model.interfaces.LeafSubstructure;
 import de.bioforscher.singa.structure.model.interfaces.Nucleotide;
 import de.bioforscher.singa.structure.model.interfaces.Structure;
 import de.bioforscher.singa.structure.model.oak.OakAtom;
 import de.bioforscher.singa.structure.model.oak.OakNucleotide;
+import de.bioforscher.singa.structure.model.oak.OakStructure;
 import de.bioforscher.singa.structure.parser.pdb.structures.StructureParser;
 import de.bioforscher.singa.structure.parser.pdb.structures.StructureWriter;
 import org.slf4j.Logger;
@@ -33,7 +36,7 @@ public class PNAGenerator {
 
     private static final Logger logger = LoggerFactory.getLogger(PNAGenerator.class);
 
-    private static int addedAtomIndex = 1000;
+    private static int addedAtomIndex = 0;
     private static final double C_O_DOUBLE_BOND_DISTANCE = 1.21;
 
     private static int backboneFailCount = 0;
@@ -51,10 +54,10 @@ public class PNAGenerator {
                 .setOptions(StructureParserOptions.withSettings(StructureParserOptions.Setting.OMIT_HYDROGENS))
                 .parse();
         */
-        Structure structure = StructureParser.local().inputStream(Thread.currentThread().getContextClassLoader()
+        OakStructure structure = (OakStructure) StructureParser.local().inputStream(Thread.currentThread().getContextClassLoader()
                 .getResourceAsStream("structure_examples/model_2501_only_aptamer.pdb")).allModels().parse();
         logger.info("Parsing structure {}.", structure.getPdbIdentifier());
-
+        addedAtomIndex = structure.getLastAddedAtomIdentifier();
         convertToPNAStructure(structure);
 
         try {
@@ -84,72 +87,76 @@ public class PNAGenerator {
                 nucleotides.stream().map(OakNucleotide.class::cast)
                         .forEach(nucleotide -> {
 
-                    Optional<Atom> firstPhosphateOptional = FIRST_BACKBONE_PHOSPHATE.getAtomFrom(nucleotide);
-                    Optional<Atom> secondPhosphateOptional = SECOND_BACKBONE_PHOSPHATE.getAtomFrom(nucleotide);
-                    Optional<Atom> backbonePosphateOptional = BACKBONE_PHOSPHATE.getAtomFrom(nucleotide);
+                            Optional<Atom> firstPhosphateOptional = FIRST_BACKBONE_PHOSPHATE.getAtomFrom(nucleotide);
+                            Optional<Atom> secondPhosphateOptional = SECOND_BACKBONE_PHOSPHATE.getAtomFrom(nucleotide);
+                            Optional<Atom> backbonePosphateOptional = BACKBONE_PHOSPHATE.getAtomFrom(nucleotide);
 
-                    Optional<Atom> backboneCarbonOnePrimeOptional = BACKBONE_CARBON_ONE_PRIME.getAtomFrom(nucleotide);
-                    Optional<Atom> backboneCarbonTwoPrimeOptional = BACKBONE_CARBON_TWO_PRIME.getAtomFrom(nucleotide);
-                    Optional<Atom> backboneCarbonThreePrimeOptional = BACKBONE_CARBON_THREE_PRIME.getAtomFrom(nucleotide);
+                            Optional<Atom> backboneCarbonOnePrimeOptional = BACKBONE_CARBON_ONE_PRIME.getAtomFrom(nucleotide);
+                            Optional<Atom> backboneCarbonTwoPrimeOptional = BACKBONE_CARBON_TWO_PRIME.getAtomFrom(nucleotide);
+                            Optional<Atom> backboneCarbonThreePrimeOptional = BACKBONE_CARBON_THREE_PRIME.getAtomFrom(nucleotide);
 
-                    Optional<Atom> backboneOxygenFourPrimeOptional = BACKBONE_OXYGEN_FOUR_PRIME.getAtomFrom(nucleotide);
-
-
-                    Optional<Atom> backboneOxygenTwoPrimeOptional = BACKBONE_OXYGEN_TWO_PRIME.getAtomFrom(nucleotide);
-
-                    if (backboneCarbonOnePrimeOptional.isPresent() && backboneCarbonTwoPrimeOptional.isPresent() &&
-                            backboneCarbonThreePrimeOptional.isPresent()) {
-
-                        OakAtom oxygenTwo = PNAGenerator
-                                .calculateMissingAtoms(nucleotide.getAtomByName("C1'").get(),
-                                        nucleotide.getAtomByName("C3'").get(),
-                                        nucleotide.getAtomByName("C2'").get(), false, "O7'", OXYGEN);
-
-                        nucleotide.addAtom(oxygenTwo);
-                        nucleotide.addBondBetween((OakAtom) nucleotide.getAtomByName("C3'").get(), oxygenTwo);
-                    } else {
-                        logger.warn("Could not calculate new backbone atome {}.", "C3'");
-                    }
+                            Optional<Atom> backboneOxygenFourPrimeOptional = BACKBONE_OXYGEN_FOUR_PRIME.getAtomFrom(nucleotide);
 
 
-                    if (firstPhosphateOptional.isPresent() && secondPhosphateOptional.isPresent() &&
-                            backbonePosphateOptional.isPresent()) {
+                            Optional<Atom> backboneOxygenTwoPrimeOptional = BACKBONE_OXYGEN_TWO_PRIME.getAtomFrom(nucleotide);
 
-                        OakAtom oxygenOne = PNAGenerator.calculateMissingAtoms(firstPhosphateOptional.get(),
-                                secondPhosphateOptional.get(), backbonePosphateOptional.get(), true,
-                                "O1'", OXYGEN);
+                            if (backboneCarbonOnePrimeOptional.isPresent() && backboneCarbonTwoPrimeOptional.isPresent() &&
+                                    backboneCarbonThreePrimeOptional.isPresent()) {
 
-                        nucleotide.addAtom(oxygenOne);
-                        nucleotide.addBondBetween((OakAtom) backbonePosphateOptional.get(), oxygenOne);
+                                OakAtom oxygenTwo = PNAGenerator
+                                        .calculateMissingAtoms(nucleotide.getAtomByName("C1'").get(),
+                                                nucleotide.getAtomByName("C3'").get(),
+                                                nucleotide.getAtomByName("C2'").get(), false, "O7'", OXYGEN);
 
-                    } else {
-                        backboneFailCount++;
-                        if (backboneFailCount == 1) {
-                            logger.warn("Could not calculate backbone for nucleotide {}.", nucleotide);
-                        } else {
-                            logger.warn("Could not calculate backbone more than once.");
-                        }
-                    }
-
-                    // remove obsolete atoms
-                    firstPhosphateOptional.ifPresent(atom -> nucleotide.removeAtom(atom.getAtomIdentifier()));
-                    secondPhosphateOptional.ifPresent(atom -> nucleotide.removeAtom(atom.getAtomIdentifier()));
-                    backboneOxygenFourPrimeOptional.ifPresent(atom -> nucleotide.removeAtom(atom.getAtomIdentifier()));
-                    //chain.removeNode(nucleotide.getAtomByName(AtomName.O4Pr));
-
-                    // remove obsolete RNA specific atoms
-                    backboneOxygenTwoPrimeOptional.ifPresent(atom -> nucleotide.removeAtom(atom.getAtomIdentifier()));
+                                nucleotide.addAtom(oxygenTwo);
+                                nucleotide.addBondBetween((OakAtom) nucleotide.getAtomByName("C3'").get(), oxygenTwo);
+                            } else {
+                                logger.warn("Could not calculate new backbone atome {}.", "C3'");
+                            }
 
 
-                    NucleotideValidator validator = new NucleotideValidator(nucleotide.getIdentifier());
-                    nucleotide.getAllAtoms().forEach(atom -> convertAtom(nucleotide, atom, validator));
-                    if (!validator.isValid()) {
-                        logger.warn("The following names were not replaced: {}", validator.getInvalidNames());
-                    } else {
-                        logger.debug("The nucleotide {} was replaced successfully.", nucleotide.getIdentifier());
-                    }
+                            if (firstPhosphateOptional.isPresent() && secondPhosphateOptional.isPresent() &&
+                                    backbonePosphateOptional.isPresent()) {
 
-                });
+                                OakAtom oxygenOne = PNAGenerator.calculateMissingAtoms(firstPhosphateOptional.get(),
+                                        secondPhosphateOptional.get(), backbonePosphateOptional.get(), true,
+                                        "O1'", OXYGEN);
+
+
+                                LeafIdentifier leafIdentifier = new LeafIdentifier(nucleotide.getPdbIdentifier(), nucleotide.getModelIdentifier(), nucleotide.getChainIdentifier(), nucleotide.getSerial() - 1);
+                                OakNucleotide container = ((OakNucleotide) structure.getLeafSubstructure(leafIdentifier).get());
+                                container.addAtom(oxygenOne);
+                                //nucleotide.addBondBetween((OakAtom) backbonePosphateOptional.get(), oxygenOne);
+
+
+                            } else {
+                                backboneFailCount++;
+                                if (backboneFailCount == 1) {
+                                    logger.warn("Could not calculate backbone for nucleotide {}.", nucleotide);
+                                } else {
+                                    logger.warn("Could not calculate backbone more than once.");
+                                }
+                            }
+
+                            // remove obsolete atoms
+                            firstPhosphateOptional.ifPresent(atom -> nucleotide.removeAtom(atom.getAtomIdentifier()));
+                            secondPhosphateOptional.ifPresent(atom -> nucleotide.removeAtom(atom.getAtomIdentifier()));
+                            backboneOxygenFourPrimeOptional.ifPresent(atom -> nucleotide.removeAtom(atom.getAtomIdentifier()));
+                            //chain.removeNode(nucleotide.getAtomByName(AtomName.O4Pr));
+
+                            // remove obsolete RNA specific atoms
+                            backboneOxygenTwoPrimeOptional.ifPresent(atom -> nucleotide.removeAtom(atom.getAtomIdentifier()));
+
+
+                            NucleotideValidator validator = new NucleotideValidator(nucleotide.getIdentifier());
+                            nucleotide.getAllAtoms().forEach(atom -> convertAtom(structure,nucleotide, atom, validator));
+                            if (!validator.isValid()) {
+                                logger.warn("The following names were not replaced: {}", validator.getInvalidNames());
+                            } else {
+                                logger.debug("The nucleotide {} was replaced successfully.", nucleotide.getIdentifier());
+                            }
+
+                        });
             }
             backboneFailCount = 0;
         });
@@ -157,8 +164,7 @@ public class PNAGenerator {
 
     }
 
-    private static void convertAtom(OakNucleotide nucleotide, Atom an, NucleotideValidator validator) {
-
+    private static void convertAtom(Structure structure, OakNucleotide nucleotide, Atom an, NucleotideValidator validator) {
         switch (an.getAtomName()) {
             case "O5'": {
                 String replacement = "N1'";
@@ -204,7 +210,12 @@ public class PNAGenerator {
             }
             case "P": {
                 String replacement = "C'";
-                replace(nucleotide, an, CARBON, replacement);
+                an = replace(nucleotide, an, CARBON, replacement);
+                nucleotide.removeAtom(an.getAtomIdentifier());
+                LeafIdentifier leafIdentifier = new LeafIdentifier(nucleotide.getPdbIdentifier(), nucleotide.getModelIdentifier(), nucleotide.getChainIdentifier(), nucleotide.getSerial() - 1);
+                OakNucleotide container = ((OakNucleotide) structure.getLeafSubstructure(leafIdentifier).get());
+                container.addAtom((OakAtom) an);
+
                 validator.validate(replacement);
                 break;
             }
@@ -213,11 +224,12 @@ public class PNAGenerator {
         }
     }
 
-    private static void replace(OakNucleotide nucleotide, Atom atom, Element replacementElement, String replacementString) {
+    private static Atom replace(OakNucleotide nucleotide, Atom atom, Element replacementElement, String replacementString) {
         logger.trace("Replacing Atom {} through {}.", atom.getAtomName(), replacementString);
         OakAtom replacementAtom = new OakAtom(atom.getAtomIdentifier(), replacementElement, replacementString, atom.getPosition());
         nucleotide.removeAtom(atom.getAtomIdentifier());
         nucleotide.addAtom(replacementAtom);
+        return replacementAtom;
     }
 
     /**
