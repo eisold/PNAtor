@@ -3,6 +3,10 @@
 ## Decription
 
 
+<img src="DNA_PNA.png" height="125"/>
+
+
+
 ## Quick start
 
 - clone repro
